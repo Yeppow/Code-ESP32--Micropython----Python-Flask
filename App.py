@@ -3,15 +3,15 @@ from pymongo import MongoClient
 
 app = Flask(name)
 
-# Koneksi ke MongoDB (ganti URL jika pakai server lain)
+# Koneksi ke MongoDB 
 client = MongoClient("mongodb://localhost:27017/")  # MongoDB lokal
-db = client["farid_databes"]  # Nama database
-collection = db["farid_collection"]  # Nama koleksi (tabel)
+db = client["farid_databes"]  
+collection = db["farid_collection"]  
 
 # Endpoint untuk menyimpan data
 @app.route('/send_data', methods=['POST'])
 def receive_data():
-    data = request.json  # Menerima data dalam format JSON
+    data = request.json  
     
     if data:
         collection.insert_one(data)  # Menyimpan data ke MongoDB
