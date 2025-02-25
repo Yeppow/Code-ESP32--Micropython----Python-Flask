@@ -1,0 +1,33 @@
+from flask import Flask, request, jsonify
+
+app = Flask(_name_)
+
+# Simpan data sensor secara global
+sensor_data = {}
+
+@app.route("/send_data", methods=["POST"])
+def receive_data():
+    global sensor_data
+    try:
+        data = request.json  # Ambil data JSON yang dikirim ESP32
+        print("Data diterima:", data)
+
+        # Simpan data yang diterima
+        sensor_data = data
+
+        return jsonify({"message": "Data berhasil disimpan", "status": "success"}), 201
+    except Exception as e:
+        return jsonify({"message": str(e), "status": "error"}), 500
+
+@app.route("/get_data", methods=["GET"])
+def get_data():
+    try:
+        if sensor_data:
+            return jsonify({"sensor_data": sensor_data, "status": "success"}), 200
+        else:
+            return jsonify({"message": "Belum ada data", "status": "error"}), 200
+    except Exception as e:
+        return jsonify({"message": str(e), "status": "error"}), 500
+
+if _name_ == "_main_":
+    app.run(host="0.0.0.0", port=5000, debug=True)
