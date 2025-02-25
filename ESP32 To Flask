@@ -1,0 +1,66 @@
+import network
+import time
+import dht
+from machine import Pin
+import urequests as requests
+
+SSID = "lelymalang3"
+PASSWORD = "ayobelajar"
+
+wifi = network.WLAN(network.STA_IF)
+wifi.active(True)
+wifi.connect(SSID, PASSWORD)
+
+# Batas waktu koneksi WiFi
+timeout = 15
+start_time = time.time()
+
+while not wifi.isconnected():
+    if time.time() - start_time > timeout:
+        print("Gagal terhubung ke WiFi.")
+        break
+    time.sleep(0.5)
+
+if wifi.isconnected():
+    print("WiFi Tersambung:", wifi.ifconfig())
+else:
+    print("WiFi tidak tersambung!")
+
+# Inisialisasi sensor
+dht_sensor = dht.DHT11(Pin(21))
+pir_sensor = Pin(19, Pin.IN)
+ldr_sensor = Pin(2, Pin.IN)
+
+# Endpoint Flask di PC (sesuaikan IP PC)
+FLASK_API_URL = "http://192.168.18.217:5000/send_data"
+
+def read_sensors():
+    try:
+        dht_sensor.measure()
+        suhu = dht_sensor.temperature()
+        kelembapan = dht_sensor.humidity()
+        pir_status = pir_sensor.value()
+        ldr_value = ldr_sensor.value()
+        return {"suhu": suhu, "kelembapan": kelembapan, "pir_status": pir_status, "ldr_value": ldr_value}
+    except Exception as e:
+        print("Error membaca sensor:", e)
+        return None
+
+def send_to_flask():
+    data = read_sensors()
+    if data:
+        try:
+            headers = {'Content-Type': 'application/json'}
+            response = requests.post(FLASK_API_URL, json=data, headers=headers)
+            print("Response dari Flask:", response.text)
+            response.close()
+        except Exception as e:
+            print("Gagal mengirim data ke Flask:", e)
+
+while True:
+    if wifi.isconnected():
+        send_to_flask()
+    else:
+        print("WiFi terputus, mencoba menyambung kembali...")
+        wifi.connect(SSID, PASSWORD)
+    time.sleep(5)
